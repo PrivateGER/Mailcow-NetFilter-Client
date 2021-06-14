@@ -64,7 +64,7 @@ def create_api_details_file():
         progress.update(t2, advance=1)
         progress.refresh()
 
-    console.print(":ok: All done! Re-run this script to use the fail2ban client.")
+    console.print(":ok: All done! Re-run this script to use the NetFilter client.")
 
 def wizard_get_fqdn(console):
     while True:
@@ -122,12 +122,17 @@ def list_banned_ips():
             console.log("\r\nSending GET request to https://" + credentials['fqdn'] + "/api/v1/get/fail2ban")
         response = requests.get("https://" + credentials['fqdn'] + "/api/v1/get/fail2ban",
                                 headers={"X-Api-Key": credentials['key']})
+
         parsed_res = response.json()
         if debug:
             console.log("Parsed response: " + str(parsed_res))
-
         progress.update(t, advance=1)
         progress.refresh()
+        progress.stop()
+
+        if response.status_code != 200:
+            console.print("[red]Got response code " + str(response.status_code) + "! Is your API key valid?[/]")
+            sys.exit(1)
 
     table = Table(title="Currently banned IPs", box=box.SQUARE)
     table.add_column("IP")
@@ -151,5 +156,6 @@ if __name__ == '__main__':
     banner()
     if not os.path.isfile(os.path.expanduser("~") + "/.mailcow_creds"): # no API cred file
         create_api_details_file()
-    load_api_details()
-    list_banned_ips()
+    else:
+        load_api_details()
+        list_banned_ips()
